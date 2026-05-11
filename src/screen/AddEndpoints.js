@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Alert, ActivityIndicator } from 'react-native';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import ScrollViewContainer from './components/ScrollViewContainer';
 import Header from './components/Header';
 import TextInputField from './components/TextInputField';
@@ -9,29 +10,42 @@ import Dropdown from './components/Dropdown';
 import { getAllServers, addEndpoint } from '../API/Home';
 
 const AddEndpoints = ({ navigation }) => {
-  const [servers, setServers] = useState([]);
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [selectedProtocol, setSelectedProtocol] = useState(null);
   const [url, setUrl] = useState('');
   const [sampleMsg, setSampleMsg] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    getAllServers()
-      .then(data => setServers(data || []))
-      .catch(() => Alert.alert('Error', 'Failed to load servers'));
-  }, []);
+  const { data: servers = [] } = useQuery({
+    queryKey: ['servers'],
+    queryFn: getAllServers,
+    onError: () => Alert.alert('Error', 'Failed to load servers'),
+  });
 
-  const handleAddEndpoint = async () => {
+  const { mutate: addEndpointMutate, isPending } = useMutation({
+    mutationFn: addEndpoint,
+    onSuccess: () => {
+      Alert.alert('Success', 'Endpoint added successfully!');
+      navigation.goBack();
+    },
+    onError: error => {
+      const detail = error.response?.data?.detail;
+      const message =
+        typeof detail === 'string'
+          ? detail
+          : Array.isArray(detail)
+          ? detail.map(d => d.msg).join(', ')
+          : 'Something went wrong!';
+      Alert.alert('Error', message);
+    },
+  });
+
+  const handleAddEndpoint = () => {
     if (!selectedServerId)
       return Alert.alert('Error', 'Please select a source server');
     if (!url.trim()) return Alert.alert('Error', 'Please enter URL');
-    // if (!selectedProtocol)
-    //   return Alert.alert('Error', 'Please select protocol (FHIR or HL7)');
     if (!sampleMsg.trim())
       return Alert.alert('Error', 'Please enter sample message');
 
-    // sample_msg: FHIR = JSON object, HL7 = raw string
     let parsedSampleMsg;
     if (selectedProtocol === 'FHIR') {
       try {
@@ -43,28 +57,12 @@ const AddEndpoints = ({ navigation }) => {
       parsedSampleMsg = sampleMsg.trim();
     }
 
-    setLoading(true);
-    try {
-      await addEndpoint({
-        server_id: selectedServerId,
-        url: url.trim(),
-        server_protocol: selectedProtocol,
-        sample_msg: parsedSampleMsg,
-      });
-      Alert.alert('Success ', 'Endpoint added successfully!');
-      navigation.goBack();
-    } catch (error) {
-      const detail = error.response?.data?.detail;
-      const message =
-        typeof detail === 'string'
-          ? detail
-          : Array.isArray(detail)
-          ? detail.map(d => d.msg).join(', ')
-          : 'Something went wrong!';
-      Alert.alert('Error', message);
-    } finally {
-      setLoading(false);
-    }
+    addEndpointMutate({
+      server_id: selectedServerId,
+      url: url.trim(),
+      server_protocol: selectedProtocol,
+      sample_msg: parsedSampleMsg,
+    });
   };
 
   return (
@@ -79,7 +77,7 @@ const AddEndpoints = ({ navigation }) => {
           onSelect={v => {
             const server = servers.find(s => s.name === v);
             setSelectedServerId(server?.server_id);
-            setSelectedProtocol(server?.protocol); 
+            setSelectedProtocol(server?.protocol);
           }}
         />
 
@@ -89,13 +87,6 @@ const AddEndpoints = ({ navigation }) => {
           value={url}
           onChangeText={setUrl}
         />
-
-        {/* <Dropdown
-          title="Protocol"
-          placeholder="Select Protocol"
-          options={['FHIR', 'HL7']}
-          onSelect={v => setSelectedProtocol(v)}
-        /> */}
 
         <TextInputField
           title="Sample Message"
@@ -112,7 +103,7 @@ const AddEndpoints = ({ navigation }) => {
         />
 
         <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 40 }}>
-          {loading ? (
+          {isPending ? (
             <ActivityIndicator size="large" color="#0D253C" />
           ) : (
             <Button title="Add Endpoint" onPress={handleAddEndpoint} />

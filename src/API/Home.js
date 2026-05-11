@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Alert } from 'react-native';
 
-const BASE_URL = 'http://192.168.33.190:9000';
+const BASE_URL = 'http://192.168.36.190:9000';
 const handleError = error => {
   const detail = error.response?.data?.detail;
   const message = typeof detail === 'string' ? detail : error.message;

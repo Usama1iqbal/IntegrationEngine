@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
 import { addServerToDB } from '../API/Home';
 
 import TextInputField from './components/TextInputField';
@@ -16,46 +17,36 @@ const AddServer = ({ navigation }) => {
   const [protocol, setProtocol] = useState('FHIR');
   const [category, setCategory] = useState('EHR');
 
-  const handleAddServer = async () => {
-    if (!name || !ip || !port) {
-      Alert.alert('Error');
-      return;
-    }
-
-    const payload = {
-      name: name,
-      ip: ip,
-      port: parseInt(port, 10),
-      protocol: protocol,
-      category: category,
-    };
-
-    try {
-      console.log('Sending Payload:', JSON.stringify(payload));
-      const response = await addServerToDB(payload);
-
-      if (response) {
-        Alert.alert('Success ', 'Added!');
-        navigation.navigate('DashBoard');
-      }
-    } catch (error) {
+  const { mutate: addServer } = useMutation({
+    mutationFn: addServerToDB,
+    onSuccess: () => {
+      Alert.alert('Success', 'Added!');
+      navigation.navigate('DashBoard');
+    },
+    onError: error => {
       const detail = error.response?.data?.detail;
-
       const message =
         typeof detail === 'string'
           ? detail
           : Array.isArray(detail)
           ? detail.map(d => d.msg).join(', ')
           : error.message || 'Connection fail';
-
       Alert.alert('Backend Error', message);
+    },
+  });
+
+  const handleAddServer = () => {
+    if (!name || !ip || !port) {
+      Alert.alert('Error');
+      return;
     }
+    addServer({ name, ip, port: parseInt(port, 10), protocol, category });
   };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollViewContainer>
         <Header title="Add Server" fontSize={25} />
-
         <TextInputField
           title="Server IP"
           placeholder="e.g. 8.8.8.8"
@@ -75,7 +66,6 @@ const AddServer = ({ navigation }) => {
           value={name}
           onChangeText={setName}
         />
-
         <View style={{ marginTop: 10 }}>
           <Dropdown
             title="Protocol"
@@ -90,12 +80,10 @@ const AddServer = ({ navigation }) => {
             onSelect={val => setCategory(val)}
           />
         </View>
-
         <View style={{ marginVertical: 50, alignItems: 'center' }}>
           <Button title="Add Server" onPress={handleAddServer} />
         </View>
       </ScrollViewContainer>
-
       <NavigationHomeEndPointRoutesLogs />
     </View>
   );

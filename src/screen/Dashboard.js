@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { getAllServers } from '../API/Home2';
 
 import ScrollViewContainer from './components/ScrollViewContainer';
@@ -10,23 +11,10 @@ import DashBoardData from './components/DashboardData';
 import NavigationHomeEndPointRoutesLogs from './components/NavigationHomeEndPointRoutesLogs';
 
 const DashBoard = ({ navigation }) => {
-  const [servers, setServers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchServers();
-  }, []);
-
-  const fetchServers = async () => {
-    try {
-      const data = await getAllServers();
-      setServers(data);
-    } catch (error) {
-      console.log('Fetch fail: ', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: servers = [], isLoading } = useQuery({
+    queryKey: ['servers'],
+    queryFn: getAllServers,
+  });
 
   const total_servers_conected = servers?.length;
 
@@ -44,14 +32,7 @@ const DashBoard = ({ navigation }) => {
           />
         </View>
 
-        {/* <View style={[styles.serverHeaderRow, styles.headerBorder]}>
-          <Text style={styles.middleTitle}>Server Name</Text>
-          <Text style={styles.middleTitle}>Protocol</Text>
-          <Text style={styles.middleTitle}>Status</Text>
-          <Text style={styles.middleTitle}>Detail</Text>
-        </View> */}
-
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator
             size="large"
             color="#0D253C"
@@ -72,7 +53,10 @@ const DashBoard = ({ navigation }) => {
         )}
       </ScrollViewContainer>
 
-      <NavigationHomeEndPointRoutesLogs anavigation={navigation} activeTab="Home" />
+      <NavigationHomeEndPointRoutesLogs
+        anavigation={navigation}
+        activeTab="Home"
+      />
     </View>
   );
 };

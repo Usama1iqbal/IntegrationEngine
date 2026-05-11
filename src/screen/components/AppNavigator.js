@@ -9,7 +9,7 @@ import Routee from '../Routee';
 import AddRouteDetail from '../AddRouteDetail';
 import AddEndpoints from '../AddEndpoints';
 import ServerDetail from '../ServerDetail';
-import RouteDetail from '..RouteDetail/';
+import RouteDetail from '../RouteDetail';
 import EditServer from '../EditServer';
 import EditRouteDetail from '../EditRouteDetail';
 import MessageLogs from '../MessageLogs';

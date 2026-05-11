@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, Alert, TouchableOpacity } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
 import ScrollViewContainer from './components/ScrollViewContainer';
 import Header from './components/Header';
 import TextinputWraper from './components/TextinputWraper';
@@ -9,25 +10,23 @@ import { loginUser } from '../API/Home';
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const { mutate: login, isPending } = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (response) => {
+      if (response) navigation.navigate('DashBoard');
+    },
+    onError: (error) => {
+      Alert.alert('Login Failed', error.message || 'Invalid Credentials');
+    },
+  });
+
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
-
-    setLoading(true);
-    try {
-      const response = await loginUser({ email, password });
-      if (response) {
-        navigation.navigate('DashBoard'); // ✅
-      }
-    } catch (error) {
-      Alert.alert('Login Failed', error.message || 'Invalid Credentials');
-    } finally {
-      setLoading(false);
-    }
+    login({ email, password });
   };
 
   return (
@@ -52,9 +51,9 @@ const Login = ({ navigation }) => {
       />
 
       <BlueButton
-        title={loading ? 'Logging in...' : 'Sign in'}
+        title={isPending ? 'Logging in...' : 'Sign in'}
         onPress={handleLogin}
-        disabled={loading}
+        disabled={isPending}
       />
 
       <View style={styles.footerContainer}>

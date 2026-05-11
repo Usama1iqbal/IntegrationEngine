@@ -1,38 +1,35 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, Alert, TouchableOpacity } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
 import ScrollViewContainer from './components/ScrollViewContainer';
 import Header from './components/Header';
 import TextinputWraper from './components/TextinputWraper';
 import BlueButton from './components/BlueButton';
-import { signupUser } from '../API/Home'; 
+import { signupUser } from '../API/Home';
 
 const Signup = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSignup = async () => {
+  const { mutate: signup, isPending } = useMutation({
+    mutationFn: signupUser,
+    onSuccess: () => {
+      Alert.alert('Success', 'Account created! Please Login.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+    },
+    onError: (error) => {
+      Alert.alert('Signup Failed', error.message || 'Error creating account');
+    },
+  });
+
+  const handleSignup = () => {
     if (!name || !email || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
-
-    setLoading(true);
-    try {
-      await signupUser({
-         user_name: name,
-        email,
-        password,
-      });
-      Alert.alert('Success', 'Account created! Please Login.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') },
-      ]);
-    } catch (error) {
-      Alert.alert('Signup Failed', error.message || 'Error creating account');
-    } finally {
-      setLoading(false);
-    }
+    signup({ user_name: name, email, password });
   };
 
   return (
@@ -53,7 +50,7 @@ const Signup = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
-     <TextinputWraper
+      <TextinputWraper
         placeholder="Enter your Password"
         icon={require('../assests/Password.png')}
         rightIcon={require('../assests/eye-slash.png')}
@@ -63,9 +60,9 @@ const Signup = ({ navigation }) => {
       />
 
       <BlueButton
-        title={loading ? 'Creating Account...' : 'Sign up'}
+        title={isPending ? 'Creating Account...' : 'Sign up'}
         onPress={handleSignup}
-        disabled={loading}
+        disabled={isPending}
       />
 
       <View style={styles.footerContainer}>

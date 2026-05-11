@@ -1,12 +1,12 @@
 // src/API/Home2.js
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.33.190:9000';
+const BASE_URL = 'http://192.168.36.190:9000';
 
 export const getAllServers = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/server/all-servers`, {
-      timeout: 5000, // 5 seconds gap
+      timeout: 5000, 
     });
     return response.data;
   } catch (error) {

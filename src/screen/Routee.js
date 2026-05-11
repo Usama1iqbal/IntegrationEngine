@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { getAllRoutes } from '../API/Home';
 import Button from './components/Button';
 import ScrollViewContainer from './components/ScrollViewContainer';
@@ -8,20 +9,10 @@ import RouteData from './components/RouteData';
 import NavigationHomeEndPointRoutesLogs from './components/NavigationHomeEndPointRoutesLogs';
 
 const Routee = ({ navigation }) => {
-  const [routes, setRoutes] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getAllRoutes()
-      .then(data => {
-        setRoutes(data || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.log('Routes fetch error:', err.message);
-        setLoading(false);
-      });
-  }, []);
+  const { data: routes = [], isLoading } = useQuery({
+    queryKey: ['routes'],
+    queryFn: getAllRoutes,
+  });
 
   return (
     <View style={styles.container}>
@@ -41,7 +32,7 @@ const Routee = ({ navigation }) => {
           />
         </View>
 
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator
             size="large"
             color="#2F80ED"
@@ -64,13 +55,6 @@ const Routee = ({ navigation }) => {
             No routes found
           </Text>
         )}
-
-        {/* <View style={styles.buttonContainer}>
-          <Button
-            title="Add Channels"
-            onPress={() => navigation.navigate('AddRouteDetail')}
-          />
-        </View> */}
       </ScrollViewContainer>
 
       <NavigationHomeEndPointRoutesLogs activeTab="Channels" />
@@ -92,12 +76,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  middleTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0D253C',
-    flex: 1,
-  },
+  middleTitle: { fontSize: 14, fontWeight: 'bold', color: '#0D253C', flex: 1 },
   buttonContainer: {
     marginTop: 40,
     alignItems: 'center',
